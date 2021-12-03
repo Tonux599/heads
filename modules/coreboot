@@ -24,13 +24,22 @@ else ifeq "$(CONFIG_COREBOOT_VERSION)" "4.14"
 	coreboot_hash := d907379b727561d7ddd1d80b2fabaa373db00c9805719116f591cbc948173c6e
 	coreboot-blobs_hash := 9ee2fe5ba37d0e214000b8655acf8922de6df792adb75790559db4c160847921
 	coreboot_depends := $(if $(CONFIG_PURISM_BLOBS), purism-blobs)
+else ifeq "$(CONFIG_COREBOOT_VERSION)" "3mdeb_kgpe-d16-release"
+	coreboot_version := git
+	commit_hash := f922fb0cf0453d77703bcc46d85eeaeb041dc12c
+	coreboot_repo := https://review.coreboot.org/coreboot.git
+	coreboot_base_dir := coreboot-$(commit_hash)
 else
 	$(error "$(BOARD): does not specify coreboot version under CONFIG_COREBOOT_VERSION")
 endif 
 
 #coreboot_version := git
 #coreboot_repo := https://github.com/osresearch/coreboot
-coreboot_base_dir := coreboot-$(coreboot_version)
+
+ifneq "$(coreboot_version)" "git"
+	coreboot_base_dir := coreboot-$(coreboot_version)
+endif
+
 coreboot_dir := $(coreboot_base_dir)/$(BOARD)
 coreboot_tar := coreboot-$(coreboot_version).tar.xz
 coreboot_url := https://www.coreboot.org/releases/$(coreboot_tar)

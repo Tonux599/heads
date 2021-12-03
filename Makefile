@@ -305,6 +305,13 @@ define define_module =
     # this case, since we don't have a stable version to compare against.
     $(build)/$($1_base_dir)/.canary:
 	git clone $($1_repo) "$(build)/$($1_base_dir)"
+	if [[ "$(CONFIG_COREBOOT_VERSION)" == "3mdeb_kgpe-d16-release" ]]; then \
+		pushd $(build)/$($1_base_dir); \
+		git remote add dasharo https://github.com/Dasharo/coreboot.git; \
+		git fetch dasharo; \
+		git checkout "$(commit_hash)"; \
+		popd; \
+	fi
 	cd $(build)/$($1_base_dir) && git submodule update --init --checkout
 	if [ -r patches/$($1_patch_name).patch ]; then \
 		( cd $(build)/$($1_base_dir) ; patch -p1 ) \
