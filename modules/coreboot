@@ -53,6 +53,12 @@ $(build)/$(coreboot_dir)/.configured: $(CONFIG_COREBOOT_CONFIG)
 
 EXTRA_FLAGS := -fdebug-prefix-map=$(pwd)=heads -gno-record-gcc-switches -Wno-error=packed-not-aligned
 
+ifeq "$(CONFIG_COREBOOT_VERSION)" "3mdeb_kgpe-d16-release"
+	#Currently needed to build https://github.com/Dasharo/coreboot/tree/asus_kgpe-d16/release
+	#Keep a close eye in case we can remove it in the future.
+	EXTRA_FLAGS += -Wno-address-of-packed-member
+endif
+
 coreboot_configure := \
 	mkdir -p "$(build)/$(coreboot_dir)" \
 	&& cp "$(pwd)/$(CONFIG_COREBOOT_CONFIG)" "$(build)/$(coreboot_dir)/.config" \
