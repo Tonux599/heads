@@ -1,0 +1,25 @@
+From 9a92a2edbba2684210263ac393bf12e0587b2936 Mon Sep 17 00:00:00 2001
+From: Thomas Clarke <tonux@riseup.net>
+Date: Mon, 23 Jun 2025 12:52:56 +0100
+Subject: [PATCH] force enable XMP Profile 1
+
+---
+ src/mainboard/msi/ms7e06/romstage_fsp_params.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/mainboard/msi/ms7e06/romstage_fsp_params.c b/src/mainboard/msi/ms7e06/romstage_fsp_params.c
+index da53939708..5330dfdd1b 100644
+--- a/src/mainboard/msi/ms7e06/romstage_fsp_params.c
++++ b/src/mainboard/msi/ms7e06/romstage_fsp_params.c
+@@ -89,7 +89,7 @@ void mainboard_memory_init_params(FSPM_UPD *memupd)
+ 
+ 	memupd->FspmConfig.OcLock = 0;
+ 
+-	memupd->FspmConfig.SpdProfileSelected = dasharo_get_memory_profile();
++	memupd->FspmConfig.SpdProfileSelected = 2;
+ 
+ 	if (CONFIG(BOARD_MSI_Z790_P_PRO_WIFI_DDR4))
+ 		memcfg_init(memupd, &ddr4_mem_config, &dimm_module_spd_info, false);
+-- 
+2.39.5
+
