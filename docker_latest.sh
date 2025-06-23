@@ -51,8 +51,8 @@ echo
 # Execute the docker run command with the provided parameters
 if [ -d "/dev/bus/usb" ]; then
 	echo "--->Launching container with access to host's USB buses (some USB devices were connected to host)..."
-	docker run --device=/dev/bus/usb:/dev/bus/usb -e DISPLAY=$DISPLAY --network host --rm -ti -v $(pwd):$(pwd) -w $(pwd) $DOCKER_IMAGE -- "$@"
+	docker run --device=/dev/bus/usb:/dev/bus/usb -e DISPLAY=$DISPLAY --network host --rm -ti -v $(pwd):$(pwd) -v /lib/firmware:/lib/firmware -w $(pwd) $DOCKER_IMAGE -- "$@"
 else
 	echo "--->Launching container without access to host's USB buses (no USB devices was connected to host)..."
-	docker run -e DISPLAY=$DISPLAY --network host --rm -ti -v $(pwd):$(pwd) -w $(pwd) $DOCKER_IMAGE -- "$@"
+	docker run -e DISPLAY=$DISPLAY --network host --rm -ti -v $(pwd):$(pwd) -v /lib/firmware:/lib/firmware -w $(pwd) $DOCKER_IMAGE -- "$@"
 fi
