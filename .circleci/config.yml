@@ -11,119 +11,26 @@ commands:
         type: string
     steps:
       - run:
-          name: Make Board (console logs not contiguous because multiple CPUs used to build under CircleCI, see logs in artifacts or Output build failing logs below in case of failed step)
+          name: test
           command: |
-            echo "Sourcing /devenv.sh since docker entrypoint doesn't do it as expected"
-            source /devenv.sh
-            rm -rf build/<< parameters.arch >>/<< parameters.target >>/* build/<< parameters.arch >>/log/*
-            #Pass AVAILABLE_MEM_GB=8 to respect CircleCI free tier RAM assignation, which otherwise randomly fails. See Makefile calculations.
-            # Without AVAILABLE_MEM_GB=8: CircleCI passes '-j36 --load-average=54'
-            # With AVAILABLE_MEM_GB=8: CircleCI passes '-j8 --load-average=12'
-            make V=1 BOARD=<< parameters.target >> << parameters.subcommand >> AVAILABLE_MEM_GB=8  | ts || touch ./tmpDir/failed_build
-          no_output_timeout: 3h
-      - run:
-          name: Output hashes
-          command: |
-            cat build/<< parameters.arch >>/<< parameters.target >>/hashes.txt || echo "No hashes.txt for this build step..."
-      - run:
-          name: Output sizes
-          command: |
-            cat build/<< parameters.arch >>/<< parameters.target >>/sizes.txt || echo "No sizes.txt for this build step..."
-      - run:
-          name: Archiving build logs.
-          command: |
-            tar zcvf build/<< parameters.arch >>/<< parameters.target >>/logs.tar.gz $(find build/ -name "*.log")
-      - run:
-          name: Output build failing logs
-          command: |
-            if [[ -f ./tmpDir/failed_build ]]; then
-              find "./build/<< parameters.arch >>/" -name "*.log" -type f -mmin -1 -exec tail -n +1 '{}' +
-              exit 1
-            else
-              echo "Step hasn't failed. Continuing with next step..."
-            fi
-      - store_artifacts:
-          path: build/<< parameters.arch >>/<< parameters.target >>
+            echo "Hello World"
 
 jobs:
   prep_env:
     docker:
       - image: tlaurion/heads-dev-env:v0.2.5
-    resource_class: large
+    resource_class: small
     working_directory: ~/heads
     steps:
-      - checkout
       - run:
-          name: git reset
+          name: test
           command: |
-            git reset --hard "$CIRCLE_SHA1"
-      - run:
-          name: Make tmp dir
-          command: |
-            mkdir ./tmpDir
-      - run:
-          name: Creating all modules and patches digest (All modules cache digest)
-          command: |
-            find .circleci/config.yml ./Makefile ./flake.lock ./patches/ ./modules/ -type f | sort -h |xargs sha256sum > ./tmpDir/all_modules_and_patches.sha256sums
-      - run:
-          name: Creating coreboot (and associated patches) and musl-cross-make modules digest (musl-cross-make and coreboot cache digest)
-          command: |
-            find .circleci/config.yml ./flake.lock ./modules/coreboot ./modules/musl-cross-make* ./patches/coreboot* -type f | sort -h | xargs sha256sum > ./tmpDir/coreboot_musl-cross-make.sha256sums
-      - run:
-          name: Creating musl-cross-make and musl-cross-make patches digest (musl-cross-make cache digest)
-          command: |
-            find ./flake.lock modules/musl-cross-make* -type f | sort -h | xargs sha256sum > ./tmpDir/musl-cross-make.sha256sums
-      - restore_cache:
-          # First matched/found key wins and following keys are not tried
-          keys:
-            # Cache for matching modules digest, validated to be exactly the same as in GitHub current commit.
-            # This cache was made on top of below caches, if previously existing.
-            # If no module definition changed, we reuse this one
-            - nix-docker-heads-modules-and-patches-{{ checksum "./tmpDir/all_modules_and_patches.sha256sums" }}{{ .Environment.CACHE_VERSION }}
-
-            # Cache for coreboot module (and patches) and musl-cross-make digests (coreboot: triannual release)
-            - nix-docker-heads-coreboot-musl-cross-make-{{ checksum "./tmpDir/coreboot_musl-cross-make.sha256sums" }}{{ .Environment.CACHE_VERSION }}
-
-            # Cache for musl-cross-make module digest (rarely modified).
-            - nix-docker-heads-musl-cross-make-{{ checksum "./tmpDir/musl-cross-make.sha256sums" }}{{ .Environment.CACHE_VERSION }}
-      - run:
-          name: Download and neuter xx20 ME (keep generated GBE and extracted IFD in tree)
-          command: |
-            ./blobs/xx20/download_parse_me.sh
-      - run:
-          name: Download Optiplex 7010/9010 blobs
-          command: |
-            ./blobs/xx30/optiplex_7010_9010.sh ./blobs/xx30
-      # me_cleaner.py present under heads blobs/utils/me_cleaner dir comes from https://github.com/corna/me_cleaner/blob/43612a630c79f3bc6f2653bfe90dfe0b7b137e08/me_cleaner.py
-      - run:
-          name: Download and neuter xx30 ME (keep generated GBE and extracted IFD in tree)
-          command: |
-            ./blobs/xx30/download_clean_me_manually.sh -m $(readlink -f ./blobs/utils/me_cleaner/me_cleaner.py)
-      - run:
-          name: Download, neuter and deguard xx80 ME (keep generated GBE and extracted IFD in tree)
-          command: |
-            ./blobs/xx80/download_clean_deguard_me_pad_tb.sh -m $(readlink -f ./blobs/utils/me_cleaner/me_cleaner.py) ./blobs/xx80/
-      - run:
-          name: Download and extract t530 vbios roms for dgpu boards
-          command: |
-            echo skipping for now
-            exit 0
-            ./blobs/xx30/vbios_t530.sh
-      - run:
-          name: Download and extract w530 vbios roms for dgpu boards
-          command: |
-            echo skipping for now
-            exit 0
-            ./blobs/xx30/vbios_w530.sh
-      - persist_to_workspace:
-          root: ~/heads
-          paths:
-            - .
+            echo "Hello World"
 
   build_and_persist:
     docker:
       - image: tlaurion/heads-dev-env:v0.2.5
-    resource_class: large
+    resource_class: small
     working_directory: ~/heads
     parameters:
       arch:
@@ -134,24 +41,15 @@ jobs:
       subcommand:
         type: string
     steps:
-      - attach_workspace:
-          at: ~/heads
       - build_board:
           arch: << parameters.arch >>
           target: << parameters.target >>
           subcommand: << parameters.subcommand >>
-      - persist_to_workspace:
-          root: ~/heads
-          paths:
-            - packages/<< parameters.arch >>
-            - build/<< parameters.arch >>
-            - crossgcc/<< parameters.arch >>
-            - install/<< parameters.arch >>
 
   build:
     docker:
       - image: tlaurion/heads-dev-env:v0.2.5
-    resource_class: large
+    resource_class: small
     working_directory: ~/heads
     parameters:
       arch:
@@ -162,8 +60,6 @@ jobs:
       subcommand:
         type: string
     steps:
-      - attach_workspace:
-          at: ~/heads
       - build_board:
           arch: <<parameters.arch>>
           target: <<parameters.target>>
@@ -172,43 +68,13 @@ jobs:
   save_cache:
     docker:
       - image: tlaurion/heads-dev-env:v0.2.5
-    resource_class: large
+    resource_class: small
     working_directory: ~/heads
     steps:
-      - attach_workspace:
-          at: ~/heads
-      - save_cache:
-          # Generate cache for the same musl-cross-make module definition if hash is not previously existing
-          # CircleCI removed their wildcard support, so we have to list precise versions to cache in directory names
-          key: nix-docker-heads-musl-cross-make-{{ checksum "./tmpDir/musl-cross-make.sha256sums" }}{{ .Environment.CACHE_VERSION }}
-          paths:
-            - build/ppc64/musl-cross-make-fd6be58297ee21fcba89216ccd0d4aca1e3f1c5c
-            - build/x86/musl-cross-make-fd6be58297ee21fcba89216ccd0d4aca1e3f1c5c
-            - crossgcc
-            - packages
-      - save_cache:
-          # Generate cache for the same coreboot and musl-cross-make modules definition if hash is not previously existing
-          # CircleCI removed their wildcard support, so we have to list precise versions to cache in directory names
-          key: nix-docker-heads-coreboot-musl-cross-make-{{ checksum "./tmpDir/coreboot_musl-cross-make.sha256sums" }}{{ .Environment.CACHE_VERSION }}
-          paths:
-            - build/ppc64/coreboot-talos_2
-            - build/ppc64/musl-cross-make-fd6be58297ee21fcba89216ccd0d4aca1e3f1c5c
-            - build/x86/coreboot-4.11
-            - build/x86/coreboot-24.02.01
-            - build/x86/coreboot-24.12
-            - build/x86/coreboot-dasharo
-            - build/x86/coreboot-purism
-            - build/x86/musl-cross-make-fd6be58297ee21fcba89216ccd0d4aca1e3f1c5c
-            - crossgcc
-            - packages
-      - save_cache:
-          # Generate cache for the exact same modules definitions if hash is not previously existing
-          key: nix-docker-heads-modules-and-patches-{{ checksum "./tmpDir/all_modules_and_patches.sha256sums" }}{{ .Environment.CACHE_VERSION }}
-          paths:
-            - build
-            - crossgcc
-            - install
-            - packages
+      - run:
+          name: test
+          command: |
+            echo "Hello World"
 
 workflows:
   version: 2
