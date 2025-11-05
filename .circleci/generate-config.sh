@@ -13,14 +13,26 @@ while IFS="" read -r cb_ver; do
   sed -i "/^${cb_board}*$/d" "$board_list"
 done <<< "$coreboot_versions"
 
+function get_arch_for_board() {
+  local board="$1"
+
+  if grep "CONFIG_TARGET_ARCH" "./boards/${board}/${board}.config" >/dev/null 2>&1; then
+    echo $(cat "./boards/${board}/${board}.config" | grep "CONFIG_TARGET_ARCH=" | cut -d'=' -f2)
+  else
+    echo "x86"
+  fi
+}
+
 function print_cb_board() {
   local cb_ver=$(echo "$1" | cut -d' ' -f1)
   local board=$(echo "$1" | cut -d' ' -f2)
+  local arch=$(get_arch_for_board "$board")
 
   cat << EOF
       # Coreboot: $cb_ver
       - build_and_persist:
           name: $board
+          arch: $arch
           target: $board
           subcommand: ""
           requires:
@@ -33,10 +45,12 @@ function print_board() {
   local board="$1"
   local cb_ver=$(cat "./boards/${board}/${board}.config" | grep "CONFIG_COREBOOT_VERSION=" | cut -d'=' -f2)
   local parent_board=$(cat $cb_board_list | grep "$cb_ver " | cut -d' ' -f2)
+  local arch=$(get_arch_for_board "$board")
 
   cat << EOF
       - build:
           name: $board
+          arch: $arch
           target: $board
           subcommand: ""
           requires:
