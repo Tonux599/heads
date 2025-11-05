@@ -9,14 +9,16 @@ coreboot_versions=$(grep -R "CONFIG_COREBOOT_VERSION=" ./boards | rev | cut -d'=
 
 while IFS="" read -r cb_ver; do
   cb_board=$(grep -R -m1 "CONFIG_COREBOOT_VERSION=$cb_ver" ./boards | head -n1 | cut -d'/' -f3)
-  echo "$cb_board $cb_ver" >> "$cb_board_list"
+  echo "$cb_ver $cb_board" >> "$cb_board_list"
   sed -i "/^${cb_board}*$/d" "$board_list"
 done <<< "$coreboot_versions"
 
 function print_cb_board() {
-  local board=$(echo "$1" | cut -d' ' -f1)
+  local cb_ver=$(echo "$1" | cut -d' ' -f1)
+  local board=$(echo "$1" | cut -d' ' -f2)
 
   cat << EOF
+      # Coreboot: $cb_ver
       - build_and_persist:
           name: $board
           target: $board
@@ -30,7 +32,7 @@ EOF
 function print_board() {
   local board="$1"
   local cb_ver=$(cat "./boards/${board}/${board}.config" | grep "CONFIG_COREBOOT_VERSION=" | cut -d'=' -f2)
-  local parent_board=$(cat $cb_board_list | grep " $cb_ver" | cut -d' ' -f1)
+  local parent_board=$(cat $cb_board_list | grep "$cb_ver " | cut -d' ' -f2)
 
   cat << EOF
       - build:
@@ -38,7 +40,7 @@ function print_board() {
           target: $board
           subcommand: ""
           requires:
-            - $parent_board
+            - $parent_board    # Coreboot: $cb_ver
 
 EOF
 }
