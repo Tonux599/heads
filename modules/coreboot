@@ -97,9 +97,9 @@ coreboot-dasharo_repo := https://github.com/dasharo/coreboot
 
 #
 # !! WARNING !!
-# Commit hash changed to tag `msi_ms7e06_v0.9.2`
+# Commit hash changed to tag `msi_ms7e06_v0.9.3`
 #
-coreboot-dasharo_commit_hash := b9d6d8c7c2435cd38622de20ede649426d9ce6ce
+coreboot-dasharo_commit_hash := fecb8be236ff4199cf8f576375e70bcc292c4821
 #
 #
 #
